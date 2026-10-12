@@ -338,3 +338,105 @@ li.item-tugas:hover {
 .btn-hapus {
   color: #ff4757;
 }
+
+/* ======================================================== */
+/* FITUR RESPONSIVE (UNTUK HP & TABLET)                     */
+/* ======================================================== */
+
+/* 1. Tampilan Tablet (Maksimal lebar 992px) */
+@media (max-width: 992px) {
+  .konten-utama {
+    padding: 20px;
+  }
+
+  header h1 {
+    font-size: 24px;
+  }
+
+  /* Ubah kotak statistik Dashboard menjadi atas-bawah */
+  .kartu-ringkasan {
+    flex-direction: column;
+  }
+
+  /* Ubah form input tugas menjadi atas-bawah agar jari mudah menekan */
+  .area-input {
+    flex-direction: column;
+  }
+  .area-input input,
+  .area-input button {
+    width: 100%;
+  }
+}
+
+/* 2. Tampilan Smartphone (Maksimal lebar 768px) */
+@media (max-width: 768px) {
+  /* Ubah total layout agar Sidebar tidak makan tempat di HP */
+  #layarDashboard {
+    flex-direction: column;
+  }
+
+  /* Rombak Sidebar dari posisi kiri menjadi Navbar di Atas */
+  .sidebar {
+    width: 100%;
+    padding: 15px;
+    border-right: none;
+    border-bottom: 1px solid #eaeaea;
+    flex-direction: row;
+    flex-wrap: wrap; /* Izinkan elemen turun baris */
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand {
+    margin-bottom: 0;
+    padding: 0;
+  }
+
+  .profil-user {
+    border-top: none;
+    padding: 0;
+  }
+
+  /* Sembunyikan nama user agar area atas tidak sesak */
+  #namaTampil {
+    display: none;
+  }
+
+  /* Modifikasi Menu agar berjejer ke samping di bawah logo */
+  .menu-sidebar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    order: 3; /* Paksa menu turun ke bawah (baris kedua) */
+  }
+
+  .menu-sidebar li {
+    flex: 1;
+    flex-direction: column; /* Ikon di atas, Teks di bawah */
+    text-align: center;
+    font-size: 12px;
+    padding: 10px 5px;
+    gap: 5px;
+  }
+
+  /* Penyesuaian Baris Tugas agar tombol tidak saling bertumpuk di HP */
+  li.item-tugas {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .info-tugas {
+    margin: 0;
+    width: 100%;
+  }
+
+  .area-tombol {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end; /* Tombol Hapus/Selesai di kanan bawah */
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+  }
+}
