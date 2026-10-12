@@ -1,7 +1,36 @@
-// Menggunakan V3 agar memori yang error/rusak sebelumnya ter-reset otomatis
-let userAktif = null;
-let databaseMicro = JSON.parse(localStorage.getItem("databaseMicroV3")) || {};
+// script.js (Menggunakan Firebase Firestore V9)
 
+// 1. Mengimpor Modul Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  onSnapshot,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 2. Konfigurasi Firebase (Dari gambar Anda)
+const firebaseConfig = {
+  apiKey: "AIzaSyAsa3IjSoLRxQ8vVOSQ3r57pTaQn4e_EmI",
+  authDomain: "micro-workspace-db.firebaseapp.com",
+  projectId: "micro-workspace-db",
+  storageBucket: "micro-workspace-db.firebasestorage.app",
+  messagingSenderId: "320706948630",
+  appId: "1:320706948630:web:5c1bf367f220e621730f37",
+};
+
+// 3. Inisialisasi Firebase & Firestore
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Variabel Global
+let userAktif = null;
+let unsubscribe = null; // Untuk menghentikan sinkronisasi jika logout
+
+// Elemen DOM (Sama seperti sebelumnya)
 const layarLogin = document.getElementById("layarLogin");
 const inputUsername = document.getElementById("inputUsername");
 const inputPassword = document.getElementById("inputPassword");
@@ -28,8 +57,10 @@ const angkaTotal = document.getElementById("angkaTotal");
 const angkaSelesai = document.getElementById("angkaSelesai");
 const angkaPending = document.getElementById("angkaPending");
 
-// LOGIKA LOGIN
-btnMasuk.addEventListener("click", function () {
+// ---------------------------------------------------------
+// LOGIKA LOGIN DENGAN FIRESTORE
+// ---------------------------------------------------------
+btnMasuk.addEventListener("click", async function () {
   const username = inputUsername.value.trim().toLowerCase();
   const password = inputPassword.value.trim();
 
@@ -38,42 +69,72 @@ btnMasuk.addEventListener("click", function () {
     return;
   }
 
-  if (!databaseMicro[username]) {
-    databaseMicro[username] = {
-      password: password,
-      tasks: [],
-    };
-    alert(`Akun baru untuk "${username}" berhasil dibuat!`);
-  } else {
-    if (databaseMicro[username].password !== password) {
-      alert("Akses Ditolak: Password salah!");
-      return;
+  btnMasuk.disabled = true;
+  btnMasuk.textContent = "Loading...";
+
+  try {
+    const docRef = doc(db, "users", username);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      // Buat akun baru di Firestore
+      await setDoc(docRef, {
+        password: password,
+        tasks: [],
+      });
+      alert(`Akun baru untuk "${username}" berhasil dibuat!`);
+    } else {
+      // Cek password
+      const dataUser = docSnap.data();
+      if (dataUser.password !== password) {
+        alert("Akses Ditolak: Password salah!");
+        btnMasuk.disabled = false;
+        btnMasuk.innerHTML = 'Sign In <i class="fa-solid fa-arrow-right"></i>';
+        return;
+      }
     }
+
+    userAktif = username;
+    masukKeAplikasi(username);
+  } catch (error) {
+    console.error("Error saat login:", error);
+    alert("Gagal terhubung ke database. Cek koneksi Anda.");
+    btnMasuk.disabled = false;
+    btnMasuk.innerHTML = 'Sign In <i class="fa-solid fa-arrow-right"></i>';
   }
-
-  userAktif = username;
-  layarLogin.classList.add("sembunyi");
-  layarDashboard.classList.remove("sembunyi");
-
-  const namaKapital = userAktif.charAt(0).toUpperCase() + userAktif.slice(1);
-  namaTampil.textContent = namaKapital;
-  sapaanUser.textContent = `Good Morning, ${namaKapital}!`;
-
-  inputUsername.value = "";
-  inputPassword.value = "";
-
-  pindahHalaman(navDashboard, halamanDashboard);
-  perbaruiSemuaLayar();
 });
 
 inputPassword.addEventListener("keypress", (e) => {
   if (e.key === "Enter") btnMasuk.click();
 });
+
+function masukKeAplikasi(username) {
+  layarLogin.classList.add("sembunyi");
+  layarDashboard.classList.remove("sembunyi");
+
+  const namaKapital = username.charAt(0).toUpperCase() + username.slice(1);
+  namaTampil.textContent = namaKapital;
+  sapaanUser.textContent = `Good Morning, ${namaKapital}!`;
+
+  inputUsername.value = "";
+  inputPassword.value = "";
+  btnMasuk.disabled = false;
+  btnMasuk.innerHTML = 'Sign In <i class="fa-solid fa-arrow-right"></i>';
+
+  pindahHalaman(navDashboard, halamanDashboard);
+
+  // Mulai membaca data secara real-time dari Firestore
+  mulaiSinkronisasi(username);
+}
+
 btnKeluar.addEventListener("click", () => {
+  if (unsubscribe) unsubscribe(); // Hentikan sinkronisasi database
   window.location.reload();
 });
 
-// NAVIGASI MENU
+// ---------------------------------------------------------
+// NAVIGASI MENU (Sama)
+// ---------------------------------------------------------
 function pindahHalaman(menuAktif, halamanTampil) {
   navDashboard.classList.remove("aktif");
   navTasks.classList.remove("aktif");
@@ -95,27 +156,59 @@ navCalendar.addEventListener("click", () =>
   pindahHalaman(navCalendar, halamanCalendar),
 );
 
-// LOGIKA APLIKASI & TUGAS
-function perbaruiSemuaLayar() {
-  tampilkanDiTasks();
-  tampilkanDiKalender();
-  updateStatistik();
+// ---------------------------------------------------------
+// LOGIKA DATABASE FIRESTORE REAL-TIME
+// ---------------------------------------------------------
+function mulaiSinkronisasi(username) {
+  const docRef = doc(db, "users", username);
+
+  // onSnapshot akan bereaksi otomatis jika ada perubahan di database
+  unsubscribe = onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        const dataUser = docSnap.data();
+        perbaruiSemuaLayar(dataUser.tasks);
+      }
+    },
+    (error) => {
+      console.error("Error mendengarkan perubahan:", error);
+    },
+  );
 }
 
-tombolTambah.addEventListener("click", function () {
+function perbaruiSemuaLayar(tasksArr) {
+  tampilkanDiTasks(tasksArr);
+  tampilkanDiKalender(tasksArr);
+  updateStatistik(tasksArr);
+}
+
+// ---------------------------------------------------------
+// LOGIKA TAMBAH, UBAH, HAPUS TUGAS
+// ---------------------------------------------------------
+tombolTambah.addEventListener("click", async function () {
   const teksBaru = kotakTugas.value.trim();
   const tglBaru = kotakTanggal.value;
 
-  if (teksBaru !== "") {
-    databaseMicro[userAktif].tasks.push({
-      teks: teksBaru,
-      selesai: false,
-      deadline: tglBaru,
-    });
-    simpanData();
-    perbaruiSemuaLayar();
-    kotakTugas.value = "";
-    kotakTanggal.value = "";
+  if (teksBaru !== "" && userAktif) {
+    try {
+      const docRef = doc(db, "users", userAktif);
+      const docSnap = await getDoc(docRef);
+      let currentTasks = docSnap.data().tasks || [];
+
+      currentTasks.push({
+        teks: teksBaru,
+        selesai: false,
+        deadline: tglBaru,
+      });
+
+      await updateDoc(docRef, { tasks: currentTasks });
+
+      kotakTugas.value = "";
+      kotakTanggal.value = "";
+    } catch (error) {
+      console.error("Error tambah tugas:", error);
+    }
   }
 });
 
@@ -123,6 +216,39 @@ kotakTugas.addEventListener("keypress", (e) => {
   if (e.key === "Enter") tombolTambah.click();
 });
 
+// Karena onSnapshot mengambil alih rendering, kita harus
+// membuat fungsi global di objek window agar dipanggil dari inline HTML
+window.ubahStatus = async function (index) {
+  if (!userAktif) return;
+  try {
+    const docRef = doc(db, "users", userAktif);
+    const docSnap = await getDoc(docRef);
+    let currentTasks = docSnap.data().tasks;
+
+    currentTasks[index].selesai = !currentTasks[index].selesai;
+    await updateDoc(docRef, { tasks: currentTasks });
+  } catch (error) {
+    console.error("Error ubah status:", error);
+  }
+};
+
+window.hapusTugas = async function (index) {
+  if (!userAktif) return;
+  try {
+    const docRef = doc(db, "users", userAktif);
+    const docSnap = await getDoc(docRef);
+    let currentTasks = docSnap.data().tasks;
+
+    currentTasks.splice(index, 1);
+    await updateDoc(docRef, { tasks: currentTasks });
+  } catch (error) {
+    console.error("Error hapus tugas:", error);
+  }
+};
+
+// ---------------------------------------------------------
+// RENDER HTML (Sama seperti versi sebelumnya)
+// ---------------------------------------------------------
 function buatElemenListHTML(tugas, index) {
   let htmlTanggal = "";
   if (tugas.deadline) {
@@ -148,24 +274,23 @@ function buatElemenListHTML(tugas, index) {
                 ${htmlTanggal}
             </div>
             <div class="area-tombol">
-                <button class="btn-selesai" onclick="ubahStatus(${index})"><i class="fa-solid fa-circle-check"></i></button>
-                <button class="btn-hapus" onclick="hapusTugas(${index})"><i class="fa-solid fa-trash-can"></i></button>
+                <button class="btn-selesai" onclick="window.ubahStatus(${index})"><i class="fa-solid fa-circle-check"></i></button>
+                <button class="btn-hapus" onclick="window.hapusTugas(${index})"><i class="fa-solid fa-trash-can"></i></button>
             </div>
         </li>
     `;
 }
 
-function tampilkanDiTasks() {
+function tampilkanDiTasks(tasksArr) {
   daftarTugas.innerHTML = "";
-  const tugasUserIni = databaseMicro[userAktif].tasks;
-  tugasUserIni.forEach((tugas, index) => {
+  tasksArr.forEach((tugas, index) => {
     daftarTugas.innerHTML += buatElemenListHTML(tugas, index);
   });
 }
 
-function tampilkanDiKalender() {
+function tampilkanDiKalender(tasksArr) {
   daftarKalender.innerHTML = "";
-  let tugasDenganDL = databaseMicro[userAktif].tasks.map((tugas, index) => ({
+  let tugasDenganDL = tasksArr.map((tugas, index) => ({
     ...tugas,
     indexAsli: index,
   }));
@@ -186,31 +311,12 @@ function tampilkanDiKalender() {
   });
 }
 
-function updateStatistik() {
-  const tugasUserIni = databaseMicro[userAktif].tasks;
-  let total = tugasUserIni.length;
-  let selesai = tugasUserIni.filter((t) => t.selesai === true).length;
+function updateStatistik(tasksArr) {
+  let total = tasksArr.length;
+  let selesai = tasksArr.filter((t) => t.selesai === true).length;
   let pending = total - selesai;
 
   angkaTotal.textContent = total;
   angkaSelesai.textContent = selesai;
   angkaPending.textContent = pending;
-}
-
-function ubahStatus(index) {
-  databaseMicro[userAktif].tasks[index].selesai =
-    !databaseMicro[userAktif].tasks[index].selesai;
-  simpanData();
-  perbaruiSemuaLayar();
-}
-
-function hapusTugas(index) {
-  databaseMicro[userAktif].tasks.splice(index, 1);
-  simpanData();
-  perbaruiSemuaLayar();
-}
-
-function simpanData() {
-  // Simpan ke versi V3
-  localStorage.setItem("databaseMicroV3", JSON.stringify(databaseMicro));
 }
