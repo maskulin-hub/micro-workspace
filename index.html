@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MICRO Workspace</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ================= LAYAR LOGIN ================= -->
+    <div id="layarLogin" class="layar-penuh">
+      <div class="kotak-login">
+        <img src="logo.png" alt="Logo Micro" class="logo-tengah" />
+        <h2>Welcome to MICRO</h2>
+        <p>Sign in to access your personal workspace</p>
+
+        <div class="grup-input">
+          <i class="fa-solid fa-user"></i>
+          <input
+            type="text"
+            id="inputUsername"
+            placeholder="Enter your username..."
+          />
+        </div>
+
+        <!-- KOTAK PASSWORD -->
+        <div class="grup-input">
+          <i class="fa-solid fa-lock"></i>
+          <input
+            type="password"
+            id="inputPassword"
+            placeholder="Enter your password..."
+          />
+        </div>
+
+        <button id="btnMasuk">
+          Sign In <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= LAYAR DASHBOARD ================= -->
+    <div id="layarDashboard" class="layar-penuh sembunyi">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="logo.png" alt="Logo Micro" class="logo-sidebar" />
+          <h2>MICRO</h2>
+        </div>
+
+        <ul class="menu-sidebar">
+          <li id="navDashboard" class="aktif">
+            <i class="fa-solid fa-border-all"></i> Dashboard
+          </li>
+          <li id="navTasks"><i class="fa-solid fa-list-check"></i> My Tasks</li>
+          <li id="navCalendar">
+            <i class="fa-solid fa-calendar-days"></i> Calendar (DL)
+          </li>
+        </ul>
+
+        <div class="profil-user">
+          <div class="info-user">
+            <div class="avatar"><i class="fa-solid fa-user-astronaut"></i></div>
+            <span id="namaTampil">User</span>
+          </div>
+          <button id="btnKeluar" title="Logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Konten Utama (Kanan) -->
+      <main class="konten-utama">
+        <header>
+          <div>
+            <h1 id="sapaanUser">Good Morning, User!</h1>
+            <p>Manage your time, master your life.</p>
+          </div>
+        </header>
+
+        <!-- HALAMAN 1: DASHBOARD -->
+        <div id="halamanDashboard" class="halaman-konten">
+          <div class="kartu-ringkasan">
+            <div class="box-stat">
+              <h3>Total Tasks</h3>
+              <h2 id="angkaTotal">0</h2>
+            </div>
+            <div class="box-stat">
+              <h3>Completed</h3>
+              <h2 id="angkaSelesai">0</h2>
+            </div>
+            <div class="box-stat">
+              <h3>Pending</h3>
+              <h2 id="angkaPending">0</h2>
+            </div>
+          </div>
+        </div>
+
+        <!-- HALAMAN 2: MY TASKS -->
+        <div id="halamanTasks" class="halaman-konten sembunyi">
+          <div class="kartu-aplikasi">
+            <h3>Add New Task</h3>
+            <div class="area-input">
+              <input
+                type="text"
+                id="kotakTugas"
+                placeholder="What needs to be done?"
+              />
+              <input type="date" id="kotakTanggal" title="Deadline" />
+              <button id="tombolTambah">
+                <i class="fa-solid fa-plus"></i> Add
+              </button>
+            </div>
+            <ul id="daftarTugas"></ul>
+          </div>
+        </div>
+
+        <!-- HALAMAN 3: CALENDAR -->
+        <div id="halamanCalendar" class="halaman-konten sembunyi">
+          <div class="kartu-aplikasi">
+            <h3>Upcoming Deadlines</h3>
+            <p style="color: #666; margin-bottom: 20px; font-size: 14px">
+              Tugas diurutkan dari deadline terdekat.
+            </p>
+            <ul id="daftarKalender"></ul>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
