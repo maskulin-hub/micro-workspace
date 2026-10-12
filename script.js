@@ -114,7 +114,18 @@ function masukKeAplikasi(username) {
 
   const namaKapital = username.charAt(0).toUpperCase() + username.slice(1);
   namaTampil.textContent = namaKapital;
-  sapaanUser.textContent = `Good Morning, ${namaKapital}!`;
+
+  // Logika Sapaan Dinamis Berdasarkan Waktu
+  const jamSekarang = new Date().getHours();
+  let ucapanWaktu = "Good Morning";
+
+  if (jamSekarang >= 12 && jamSekarang < 18) {
+    ucapanWaktu = "Good Afternoon"; // Jam 12.00 - 17.59
+  } else if (jamSekarang >= 18 || jamSekarang < 5) {
+    ucapanWaktu = "Good Evening"; // Jam 18.00 - 04.59
+  }
+
+  sapaanUser.textContent = `${ucapanWaktu}, ${namaKapital}!`;
 
   inputUsername.value = "";
   inputPassword.value = "";
